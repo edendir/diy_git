@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 
+from . import base
 from . import data
 
 def main():
@@ -26,6 +27,9 @@ def parse_args():
     cat_file_parser.set_defaults(func=cat_file)
     cat_file_parser.add_argument('object', help='Object to get')
 
+    write_tree_parser = commands.add_parser('write-tree')
+    write_tree_parser.set_defaults(func=base.write_tree)
+
     return parser.parse_args()
 
 # Initialize a new repository
@@ -41,4 +45,9 @@ def hash_object(args):
 # Get an object
 def cat_file(args):
     sys.sdtout.flush()
-    sys.stdout.buffer.write(data.get_object(args.object))
+    sys.stdout.buffer.write(data.get_object(args.object, expected=None))
+
+# Create a new tree object
+def write_tree(args):
+    base.write_tree()
+    
