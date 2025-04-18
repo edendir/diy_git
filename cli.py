@@ -30,6 +30,10 @@ def parse_args():
     write_tree_parser = commands.add_parser('write-tree')
     write_tree_parser.set_defaults(func=base.write_tree)
 
+    read_tree_parser = commands.add_parser('read-tree')
+    read_tree_parser.set_defaults(func=base.read_tree)
+    read_tree_parser.add_argument('tree', help='Tree to read')
+
     return parser.parse_args()
 
 # Initialize a new repository
@@ -49,5 +53,8 @@ def cat_file(args):
 
 # Create a new tree object
 def write_tree(args):
-    base.write_tree()
+    print(base.write_tree())
     
+# Read a tree object
+def read_tree(args):
+    base.read_tree(args.tree)
