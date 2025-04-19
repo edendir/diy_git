@@ -1,5 +1,8 @@
+import itertools
+import operator
 import os
 
+from collections import namedtuple
 from . import data
 
 def write_tree(directory='.'):
@@ -45,12 +48,82 @@ def get_tree(oid, base_path=''):
             assert False, f'Unknown tree entry {type_}'
     return result
 
+# Empty the current directory to prep for writing the tree
+def _empty_current_directory():
+    for root, dirnames, filenames in os.walk('.', topdown=False):
+        for name in filenames:
+            path = os.path.relpath(f'{root}/{name}')
+            if is_ignored(path) or not os.path.isfile(path):
+                continue
+            os.remove(path)
+        for dirname in dirnames:
+            path = os.path.relpath(f'{root}/{dirname}')
+            if is_ignored(path):
+                continue
+            try:
+                os.rmdir(path)
+            except (FileNotFoundError, OSError):
+                # Delete might fail if directory contains ignored files
+                pass
+
 # Read the tree and write the files to disk
 def read_tree(tree_oid):
+    _empty_current_directory()
     for path, oid in get_tree(tree_oid, pase_path='./').items():
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as f:
             f.write(data.get_object(oid))
+
+# Commit the current tree to the repository
+def commit(message):
+    commit = f'tree {write_tree()}\n'
+    
+    HEAD = data.get_ref('HEAD')
+    if HEAD:
+        commit += f'parent {HEAD} \n'
+    
+    commit += f'\n{message}\n'
+
+    oid = data.hash_object(commit.encode(), 'commit')
+
+    data.update_ref('HEAD', oid)
+    
+    return oid
+
+# Checkout a commit by reading its tree and setting it as the HEAD
+def checkout(oid):
+    commit = get_commit(oid)
+    read_tree(commit.tree)
+    data.update_ref('HEAD', oid)
+
+# Create a tag
+def create_tag(name, oid):
+    data.update_ref(f'tag/{name}', oid)
+
+Commit = namedtuple('Commit', ['tree', 'parent', 'message'])
+
+# Find a commit
+def get_commit(oid):
+    parent = None
+
+    commit = data.get_object(oid, 'commit').decode()
+    lines = iter(commit.splitlines())
+
+    for line in itertools.takewhile(operator.truth, lines):
+        key, value = line.split(' ', 1)
+        if key == 'tree':
+            tree = value
+        elif key == 'parent':
+            parent = value
+        else:
+            assert False, f'Unknown commit field {key}'
+
+    message = '\n'.join(lines)
+    return Commit(tree=tree, parent=parent, message=message)
+
+# Return name for a tag
+def get_oid(name):
+    return data.get_ref(name) or name
 
 # Single function for ignoring paths
 def is_ignored(path):
