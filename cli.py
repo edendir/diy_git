@@ -55,6 +55,11 @@ def parse_args():
     tag_parser.add_argument('name', help='Tag name')
     tag_parser.add_argument('oid', default='@', type=oid, help='Commit ID to tag', nargs='?')
 
+    branch_parser = commands.add_parser('branch')
+    branch_parser.set_defaults(func=branch)
+    branch_parser.add_argument('name', help='Branch name')
+    branch_parser.add_argument('start_point', default='@', type=oid, help='Starting point for the branch', nargs='?')
+    
     k_parser = commands.add_parser('k')
     k_parser.set_defaults(func=k)
 
@@ -104,14 +109,19 @@ def checkout(args):
 def tag(args):
     base.create_tag(args.name, args.oid)
 
+#Create a branch
+def branch(args):
+    base.create_branch(args.name, args.start_point)
+    print(f'Created branch {args.name} at {args.start_point[:10]}')
+
 # Visualize the commit graph
 def k(args):
     dot = 'digraph commits {\n'
     oids = set()
     for refname, ref in data.iter_refs():
         dot += f'"{refname}" [shape=note]\n'
-        dot += f'"{refname}" -> "{ref}"\n'
-        oids.add(ref)
+        dot += f'"{refname}" -> "{ref.value}"\n'
+        oids.add(ref.value)
     for oid in base.iter_commits_and_parents(oids):
         commit = base.get_commit(oid)
         dot += f'"{oid}" [shape-box style=filled label="{oid[:10]}"]\n'
