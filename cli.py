@@ -66,6 +66,10 @@ def parse_args():
     status_parser = commands.add_parser('status')
     status_parser.set_defaults(func=status)
 
+    reset_parser = commands.add_parser('reset')
+    reset_parser.set_defaults(func=reset)
+    reset_parser.add_argument('oid', type=oid, help='Commit ID to reset to')
+
     return parser.parse_args()
 
 # Initialize a new repository
@@ -157,3 +161,7 @@ def status(args):
         print(f'On branch {branch}')
     else:
         print(f'HEAD detached at {HEAD[:10]}')
+
+def reset(args):
+    base.reset(args.oid)
+    print(f'HEAD reset to {args.oid[:10]}')
