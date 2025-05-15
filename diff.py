@@ -15,6 +15,12 @@ def compare_trees(*trees):
     for path, oids in entries.items():
         yield (path, *oids)
 
+def iter_changed_files(t_from, t_to):
+    for path, oid_from, oid_to in compare_trees(t_from, t_to):
+        if oid_from != oid_to:
+            action = ('new file' if not oid_from else
+                     'deleted' if not oid_to else 'modified')
+            yield path, action
 
 def diff_trees(t_from, t_to):
     output = b''
@@ -38,4 +44,3 @@ def diff_blobs(oid_from, oid_to, path='blob'):
             output = proc.communicate()
     
     return output
-    
