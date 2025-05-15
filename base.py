@@ -114,6 +114,11 @@ def create_tag(name, oid):
 def create_branch(name, oid):
     data.update_ref(f'heads/{name}', data.RefValue(symbolic=False, value=oid))
 
+# Iterate over all branche names
+def iter_branch_names():
+    for refname, _ in data.iter_refs('refs/heads/'):
+        yield os.path.relpath(refname, 'refs/heads/')
+
 def is_branch(branch):
     return data.get_ref(f'refs/heads/{branch}').value is not None
 
