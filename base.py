@@ -53,6 +53,18 @@ def get_tree(oid, base_path=''):
             assert False, f'Unknown tree entry {type_}'
     return result
 
+# Get the current working tree
+def get_working_tree():
+    result = {}
+    for root, _, filenames in os.walk('.'):
+        for name in filenames:
+            path = os.path.relpath(f'{root}/{name}')
+            if is_ignored(path) or not os.path.isfile(path):
+                continue
+            with open(path, 'rb') as f:
+                result[path] = data.hash_object(f.read())
+    return result
+
 # Empty the current directory to prep for writing the tree
 def _empty_current_directory():
     for root, dirnames, filenames in os.walk('.', topdown=False):

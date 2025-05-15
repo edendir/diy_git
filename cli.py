@@ -51,6 +51,10 @@ def parse_args():
     log_parser.set_defaults(func=log)
     log_parser.add_argument('oid', default='@', nargs='?', type=oid, help='Commit ID to show log for', default=None)
 
+    diff_parser = commands.add_parser('diff')
+    diff_parser.set_defaults(func=diff)
+    diff_parser.add_argument('from_oid', default='@', type=oid, help='From commit ID', nargs='?')
+
     checkout_parser = commands.add_parser('checkout')
     checkout_parser.set_defaults(func=checkout)
     checkout_parser.add_argument('commit')
@@ -134,6 +138,14 @@ def show(args):
         base.get_tree(commit.parent_tree), base.get_tree(commit.tree)
     )
     print(result)
+
+# Show the diff between working tree and a commit
+def _diff(args):
+    tree = args.commit and base.get_commit(args.commit).tree
+
+    result = diff.diff_tree(base.get_tree(tree), base.get_working_tree())
+    sys.stdout.flush()
+    sys.stdout.buffer.write(result)
 
 # Checkout a commit
 def checkout(args):
