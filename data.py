@@ -46,6 +46,10 @@ def update_ref(ref, value, deref=True):
 def get_ref(ref, deref=True):
     return _get_ref_internal(ref, deref)[1]
 
+def delete_ref(ref, deref=True):
+    ref = _get_ref_internal(ref, deref)[0]
+    os.remove(f'{GIT_DIR}/{ref}')
+
 def _get_ref_internal(ref, deref):
     ref_path = f'{GIT_DIR}/{ref}'
     value = None
@@ -62,7 +66,7 @@ def _get_ref_internal(ref, deref):
     return ref, RefValue(symbolic=False, value=value)
 
 def iter_refs(prefix='', deref=True):
-    refs = ['HEAD']
+    refs = ['HEAD', 'MERGE_HEAD']
     for root, _, filenames in os.walk(f'{GIT_DIR}/refs'):
         root = os.path.relpath(root, GIT_DIR)
         refs.extend(f'{root}/{filename}' for filename in filenames)
@@ -70,4 +74,7 @@ def iter_refs(prefix='', deref=True):
     for refname in refs:
         if not refname.startswith(prefix):
             continue
-        yield refname, get_ref(refname, deref=deref)
+        ref = get_ref(refname, deref=deref)
+        if ref.value:
+            yield refname, ref
+            
