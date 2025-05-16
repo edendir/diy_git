@@ -223,6 +223,23 @@ def iter_commits_and_parents(oid):
         # Return all other parents
         oids.extend(commit.parents[1:])
 
+def iter_objects_in_commits(oids):
+    visited = set()
+    def iter_objects_in_tree(oid):
+        visited.add(oid)
+        yield oid
+        for type_, oid, _ in _iter_tree_entries(oid):
+            if type_ == 'tree':
+                yield from iter_objects_in_tree(oid)
+            else:
+                visited.add(oid)
+                yield oid
+
+    for oid in iter_commits_and_parents(oids):
+        yield oid
+        commit = get_commit(oid)
+        if commit.tree not in visited:
+            yield from iter_objects_in_tree(commit.tree)
 
 # Return name for a tag
 def get_oid(name):

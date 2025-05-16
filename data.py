@@ -2,10 +2,21 @@
 
 import hashlib
 import os
+import shutil
 
 from collections import namedtuple
+from contextlib import contextmanager
 
-GIT_DIR = ".ugit"
+GIT_DIR = None
+
+
+@contextmanager
+def change_git_dir(new_dir):
+    global GIT_DIR
+    old_dir = GIT_DIR
+    GIT_DIR = new_dir
+    yield
+    GIT_DIR = old_dir
 
 
 def init():
@@ -27,6 +38,15 @@ def get_object(oid, expected='blob'):
     if expected is not None:
         assert type_ == expected, f'Expected {expected}, got {type_}'
     return content
+
+def object_exists(oid):
+    return os.path.isfile(f'{GIT_DIR}/object/{oid}')
+
+def fetch_object_if_missing(oid, remote_path):
+    if object_exists(oid):
+        return
+    remote_git_dir += './.ugit'
+    shutil.copy(f'{remote_git_dir}/object/{oid}', f'{GIT_DIR}/object/{oid}')
 
 RefValue = namedtuple('RefValue', ['symbolic', 'value'])
 
