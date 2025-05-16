@@ -22,6 +22,16 @@ def change_git_dir(new_dir):
 def init():
     os.makedirs(GIT_DIR)
 
+@contextmanager
+def get_index():
+    index = {}
+    if os.path.isfile(f'{GIT_DIR}/index'):
+        with open(f'{GIT_DIR}/index') as f:
+            index = json.load(f)
+    yield index
+    with open(f'{GIT_DIR}/index', 'w') as f:
+        json.dump(index, f)
+
 def hash_object(data, type_='blob'):
     obj = type_.encode() + b'\x00' + data
     oid = hashlib.sha1(obj).hexdigest()

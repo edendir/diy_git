@@ -98,6 +98,10 @@ def parse_args():
     push_parser.add_argument('remote', help='Remote path to push to')
     push_parser.add_argument('branch', help='Branch to push')
 
+    add_parser = commands.add_parser('add')
+    add_parser.set_defaults(func=add)
+    add_parser.add_argument('files', nargs='+' help='Files to add')
+
     return parser.parse_args()
 
 # Initialize a new repository
@@ -243,3 +247,6 @@ def fetch(args):
 
 def push(args):
     remote.push(args.remote, f'refs/heads/{args.branch}')
+
+def add(args):
+    base.add(args.files)
