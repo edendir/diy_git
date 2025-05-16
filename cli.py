@@ -54,7 +54,8 @@ def parse_args():
 
     diff_parser = commands.add_parser('diff')
     diff_parser.set_defaults(func=diff)
-    diff_parser.add_argument('from_oid', default='@', type=oid, help='From commit ID', nargs='?')
+    diff_parser.add_argument('from_oid', help='From commit ID', nargs='?')
+    diff_parser.add_argument('--cached', action='store_true', help='Show cached diff')
 
     checkout_parser = commands.add_parser('checkout')
     checkout_parser.set_defaults(func=checkout)
@@ -164,9 +165,22 @@ def show(args):
 
 # Show the diff between working tree and a commit
 def _diff(args):
-    tree = args.commit and base.get_commit(args.commit).tree
+    oid = args.commit and base.get_oid(args.commit)
 
-    result = diff.diff_tree(base.get_tree(tree), base.get_working_tree())
+    if args.commit:
+        tree_from = base.get_tree(oid and base.get_commit(oid).tree)
+
+    if args.cached:
+        tree_to = base.get_tree()
+        if not args.commit:
+            oid = base.get_oid('@')
+            tree_from = base.get_tree(oid and base.get_commit(oid).tree)
+    else:
+        tree_to = base.get_working_tree()
+        if not args.commit:
+            tree_from = base.get_index_tree()
+
+    result = diff.diff_tree(tree_from, tree_to)
     sys.stdout.flush()
     sys.stdout.buffer.write(result)
 
@@ -227,7 +241,12 @@ def status(args):
     print('\nChanges to be committed:\n')
     HEAD_tree = HEAD and base.get_commit(HEAD).tree
     for path, action in diff.iter_changed_files(
-        base.get_tree(HEAD_tree), base.get_working_tree()
+        base.get_tree(HEAD_tree), base.get_index_tree()
+    ):
+        print(f'{action:>12}: {path}')
+    print('\nChanges not staged for commit:\n')
+    for path, action in diff.iter_changed_files(
+        base.get_index_tree(), base.get_working_tree()
     ):
         print(f'{action:>12}: {path}')
 
