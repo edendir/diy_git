@@ -98,3 +98,6 @@ def iter_refs(prefix='', deref=True):
         if ref.value:
             yield refname, ref
             
+def push_object(oid, remote_git_dir):
+    remote_git_dir += './.ugit'
+    shutil.copy(f'{GIT_DIR}/object/{oid}', f'{remote_git_dir}/object/{oid}')
